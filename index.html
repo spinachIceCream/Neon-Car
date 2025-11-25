@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Racer</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <div class="ui-layer">
+            <div id="score-board" class="hidden">Score: <span id="score">0</span></div>
+            <div id="start-screen" class="screen">
+                <h1 class="title">NEON RACER</h1>
+                <p class="subtitle">Dodge the traffic. Survive the speed.</p>
+                <button id="start-btn" class="btn">START ENGINE</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1 class="title">CRASHED</h1>
+                <p class="subtitle">Final Score: <span id="final-score">0</span></p>
+                <button id="restart-btn" class="btn">TRY AGAIN</button>
+            </div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
