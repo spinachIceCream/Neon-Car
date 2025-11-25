@@ -13,12 +13,17 @@ const restartBtn = document.getElementById('restart-btn');
 // Game Constants
 const LANE_COUNT = 4;
 let LANE_WIDTH = 0; // Calculated based on canvas width
-const CAR_WIDTH_RATIO = 0.35; // Car width relative to lane width
-const OBSTACLE_WIDTH_RATIO = 0.35; // Smaller obstacles
-const CAR_HEIGHT_RATIO = 1.2; // Car height relative to width
+const CAR_WIDTH_RATIO = 0.35; // Player car width relative to lane width
+const CAR_HEIGHT_RATIO = 1.2; // Player car height relative to width
 const BASE_SPEED = 5;
 const SPEED_INCREMENT = 0.001;
 const SPEED_BOOST = 2; // Speed jump every 500 points
+
+const VEHICLE_TYPES = [
+    { type: 'car', widthRatio: 0.35, heightRatio: 1.2, color: '#ff00ff' },
+    { type: 'truck', widthRatio: 0.5, heightRatio: 2.2, color: '#ff4400' },
+    { type: 'bike', widthRatio: 0.15, heightRatio: 0.6, color: '#00ff00' }
+];
 
 // Game State
 let game = {
@@ -40,7 +45,8 @@ const player = {
     x: 0,
     width: 0,
     height: 0,
-    color: '#00f3ff'
+    color: '#00f3ff',
+    type: 'player'
 };
 
 // Resize Handling
@@ -190,9 +196,12 @@ function update() {
 
 function spawnObstacle() {
     const lane = Math.floor(Math.random() * LANE_COUNT);
-    // Use smaller ratio for obstacles
-    const obsWidth = LANE_WIDTH * OBSTACLE_WIDTH_RATIO;
-    const obsHeight = obsWidth * CAR_HEIGHT_RATIO;
+
+    // Random Vehicle Type
+    const vehicleType = VEHICLE_TYPES[Math.floor(Math.random() * VEHICLE_TYPES.length)];
+
+    const obsWidth = LANE_WIDTH * vehicleType.widthRatio;
+    const obsHeight = obsWidth * vehicleType.heightRatio;
     const x = (lane * LANE_WIDTH) + (LANE_WIDTH - obsWidth) / 2;
 
     // Check for obstacles in the "spawn zone" (top area)
@@ -216,7 +225,8 @@ function spawnObstacle() {
                 width: obsWidth,
                 height: obsHeight,
                 lane: lane,
-                color: '#ff00ff'
+                color: vehicleType.color,
+                type: vehicleType.type
             });
         }
     }
@@ -243,44 +253,88 @@ function draw() {
     }
 
     // Draw Player
-    drawCar(player.x, player.y, player.width, player.height, player.color, true);
+    drawCar(player.x, player.y, player.width, player.height, player.color, true, 'player');
 
     // Draw Obstacles
     game.obstacles.forEach(obs => {
-        drawCar(obs.x, obs.y, obs.width, obs.height, obs.color, false);
+        drawCar(obs.x, obs.y, obs.width, obs.height, obs.color, false, obs.type);
     });
 }
 
-function drawCar(x, y, w, h, color, isPlayer) {
+function drawCar(x, y, w, h, color, isPlayer, type) {
     ctx.save();
 
     // Glow effect
     ctx.shadowBlur = 20;
     ctx.shadowColor = color;
 
-    // Car Body
-    ctx.fillStyle = color;
-    // Simple car shape
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 5);
-    ctx.fill();
+    if (type === 'bike') {
+        // Draw Tires First (Black)
+        ctx.fillStyle = '#111';
+        const tireWidth = w * 0.8;
+        const tireHeight = h * 0.15;
+        const tireX = x + (w - tireWidth) / 2;
 
-    // Details (Windshield)
-    ctx.fillStyle = '#000';
-    ctx.fillRect(x + 5, y + h * 0.2, w - 10, h * 0.2);
+        // Rear Tire (Top)
+        ctx.fillRect(tireX, y, tireWidth, tireHeight);
+        // Front Tire (Bottom)
+        ctx.fillRect(tireX, y + h - tireHeight, tireWidth, tireHeight);
 
-    // Tail lights if player, Headlights if enemy (conceptually)
-    if (isPlayer) {
-        ctx.fillStyle = '#ff0000';
-        ctx.shadowColor = '#ff0000';
-        ctx.shadowBlur = 10;
-        ctx.fillRect(x + 5, y + h - 5, 5, 3);
-        ctx.fillRect(x + w - 10, y + h - 5, 5, 3);
+        // Bike Body (Connecting the tires)
+        ctx.fillStyle = color;
+        const bodyWidth = w * 0.6;
+        const bodyX = x + (w - bodyWidth) / 2;
+        ctx.beginPath();
+        ctx.roundRect(bodyX, y + tireHeight - 2, bodyWidth, h - (tireHeight * 2) + 4, 5);
+        ctx.fill();
+
+        // Handlebars (Near front)
+        ctx.fillStyle = '#ccc';
+        const handleBarY = y + h * 0.75;
+        ctx.fillRect(x - 2, handleBarY, w + 4, 3);
+
+        // Headlight (Single, Center)
+        if (!isPlayer) {
+            ctx.fillStyle = '#ffff00';
+            ctx.shadowColor = '#ffff00';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(x + w / 2 - 3, y + h - 5, 6, 4);
+        }
+
     } else {
-        // Enemy details
-        ctx.fillStyle = '#ffff00'; // Headlights
-        ctx.fillRect(x + 5, y + h - 5, 5, 3);
-        ctx.fillRect(x + w - 10, y + h - 5, 5, 3);
+        // Standard Car/Truck Rendering
+        ctx.fillStyle = color;
+        ctx.beginPath();
+
+        if (type === 'truck') {
+            ctx.roundRect(x, y, w, h, 2);
+        } else {
+            ctx.roundRect(x, y, w, h, 5);
+        }
+        ctx.fill();
+
+        // Details
+        ctx.fillStyle = '#000';
+        if (type === 'truck') {
+            ctx.fillRect(x + 2, y + h * 0.1, w - 4, h * 0.15); // Windshield
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(x + 2, y + h * 0.3, w - 4, h * 0.65); // Cargo bed
+        } else {
+            ctx.fillRect(x + 5, y + h * 0.2, w - 10, h * 0.2); // Windshield
+        }
+
+        // Lights
+        if (isPlayer) {
+            ctx.fillStyle = '#ff0000';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(x + 5, y + h - 5, 5, 3);
+            ctx.fillRect(x + w - 10, y + h - 5, 5, 3);
+        } else {
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(x + 5, y + h - 5, 5, 3);
+            ctx.fillRect(x + w - 10, y + h - 5, 5, 3);
+        }
     }
 
     ctx.restore();
