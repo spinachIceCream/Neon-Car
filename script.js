@@ -13,8 +13,8 @@ const restartBtn = document.getElementById('restart-btn');
 // Game Constants
 const LANE_COUNT = 4;
 let LANE_WIDTH = 0; // Calculated based on canvas width
-const CAR_WIDTH_RATIO = 0.45; // Car width relative to lane width
-const OBSTACLE_WIDTH_RATIO = 0.45; // Smaller obstacles
+const CAR_WIDTH_RATIO = 0.35; // Car width relative to lane width
+const OBSTACLE_WIDTH_RATIO = 0.35; // Smaller obstacles
 const CAR_HEIGHT_RATIO = 1.2; // Car height relative to width
 const BASE_SPEED = 5;
 const SPEED_INCREMENT = 0.001;
@@ -69,17 +69,39 @@ document.addEventListener('keydown', (e) => {
     if (!game.active) return;
 
     if (e.key === 'ArrowLeft' || e.key === 'a') {
-        if (player.lane > 0) {
-            player.lane--;
-            updatePlayerTarget();
-        }
+        moveLeft();
     } else if (e.key === 'ArrowRight' || e.key === 'd') {
-        if (player.lane < LANE_COUNT - 1) {
-            player.lane++;
-            updatePlayerTarget();
-        }
+        moveRight();
     }
 });
+
+// Touch Handling
+document.addEventListener('touchstart', (e) => {
+    if (!game.active) return;
+
+    const touchX = e.touches[0].clientX;
+    const screenWidth = window.innerWidth;
+
+    if (touchX < screenWidth / 2) {
+        moveLeft();
+    } else {
+        moveRight();
+    }
+}, { passive: false });
+
+function moveLeft() {
+    if (player.lane > 0) {
+        player.lane--;
+        updatePlayerTarget();
+    }
+}
+
+function moveRight() {
+    if (player.lane < LANE_COUNT - 1) {
+        player.lane++;
+        updatePlayerTarget();
+    }
+}
 
 function updatePlayerTarget() {
     player.targetX = (player.lane * LANE_WIDTH) + (LANE_WIDTH - player.width) / 2;
